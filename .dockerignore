@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.log
+.DS_Store
+.vscode
+data/
+notebooks/
+# Exclude specific model caches if they are too large or handled differently
+# For this setup, we copy the cache from build-env, so no need to ignore here.
