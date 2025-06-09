@@ -12,4 +12,4 @@ pdfminer.six
 # google-cloud-aiplatform   ghj'
 # .\venv\Scripts\Activate.ps1  ,  pip install -r requirements.txt   , 
 
-resume-prioritization-project    intelligent-resume-prioritizer  457835569309
+#resume-prioritization-project    intelligent-resume-prioritizer  457835569309
