@@ -1,70 +1,34 @@
-# This Dockerfile defines the steps to build a Docker image for your Streamlit application.
-# It uses a multi-stage build for a smaller final image.
-
-# Stage 1: Build environment for dependencies and model downloads
-FROM python:3.9-slim-buster as build-env
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies needed for NLP libraries and PDF/DOCX processing
-# These are crucial for libraries like pdfminer.six and spacy
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    default-libmysqlclient-dev \
-    libgl1-mesa-glx \
-    libgirepository1.0-dev \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info \
-    fonts-liberation \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt/archives/*
-
-# Copy the requirements file into the container
-COPY requirements.txt ./
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Download NLTK data (only once during image build)
-# These are necessary for text_cleaner.py
-RUN python -m nltk.downloader stopwords wordnet punkt averaged_perceptron_tagger
-
-# Download SpaCy model (only once during image build)
-# This is necessary for text_cleaner.py if you enable entity extraction
-RUN python -m spacy download en_core_web_sm
-
-# Download Sentence Transformer model (only once during image build)
-# This is necessary for skill_matcher.py
-RUN pip install sentence-transformers
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
-
-# Stage 2: Final lightweight image for production
+# Use a stable, lightweight Python base image.
+# This is the foundation: it includes Python 3.9 and basic Linux utilities.
 FROM python:3.9-slim-buster
 
-# Set working directory
+# Set the working directory inside the container.
+# All subsequent commands (COPY, RUN, CMD) will be executed relative to this directory.
+# So, '/app' inside the container will contain your project code.
 WORKDIR /app
 
-# Copy installed dependenci
-es and downloaded models from the build-env stage
-COPY --from=build-env /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=build-env /root/.cache/torch /root/.cache/torch # For Sentence Transformer model cache
-COPY --from=build-env /root/nltk_data /usr/local/share/nltk_data # For NLTK data
-COPY --from=build-env /usr/local/lib/python3.9/site-packages/spacy/data/en_core_web_sm /usr/local/lib/python3.9/site-packages/spacy/data/en_core_web_sm # For SpaCy model
+# Copy your project's 'requirements.txt' file into the container's '/app' directory.
+# We do this first so Docker can cache this step. If only code changes,
+# it won't reinstall dependencies unnecessarily.
+COPY requirements.txt .
 
-# Copy the application code
-COPY . /app
+# Install all Python dependencies listed in 'requirements.txt'.
+# '--no-cache-dir' helps keep the final Docker image size smaller.
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port Streamlit runs on
-EXPOSE 8501
+# Copy the entire contents of your local project directory (where this Dockerfile is)
+# into the container's '/app' directory.
+# The first '.' refers to your local current directory.
+# The second '.' refers to the WORKDIR '/app' inside the container.
+COPY . .
 
-# Command to run the Streamlit application
-# --server.port=8501: Ensures Streamlit listens on this port
-# --server.enableCORS=false: Disables CORS protection (useful for some deployments)
-# --server.enableXsrfProtection=false: Disables XSRF protection (useful for some deployments)
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
+# Declare that the container will listen for network traffic on port 8080.
+# Cloud Run expects applications to listen on port 8080 by default.
+EXPOSE 8080
+
+# This is the command that Docker will run when the container starts.
+# It starts your Streamlit application.
+# "streamlit run app.py": Tells Streamlit to execute your main app file.
+# "--server.port 8080": Forces Streamlit to listen on port 8080.
+# "--server.address 0.0.0.0": Makes the Streamlit app accessible from outside the container.
+CMD ["streamlit", "run", "app.py", "--server.port", "8080", "--server.address", "0.0.0.0"]

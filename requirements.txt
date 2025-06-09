@@ -9,4 +9,7 @@ python-docx
 pdfminer.six
 # For GCP integration (if you enable GCS fetch or Vertex AI calls)
 # google-cloud-storage
-# google-cloud-aiplatform
+# google-cloud-aiplatform   ghj'
+# .\venv\Scripts\Activate.ps1  ,  pip install -r requirements.txt   , 
+
+resume-prioritization-project    intelligent-resume-prioritizer  457835569309
