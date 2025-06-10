@@ -1,0 +1,26 @@
+# This YAML file defines the steps for Cloud Build.
+# It explicitly defines the Docker build process and logging options.
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO_NAME}/${_IMAGE_NAME}:${_IMAGE_TAG}', '.']
+  # The '.' at the end means the build context is the current directory (root of the repo)
+  # This is where your Dockerfile is located.
+
+# Options for this build process.
+options:
+  # This explicitly sets the logging option to send logs to Cloud Logging only.
+  # This should bypass the error you're getting from the trigger's default behavior.
+  logging: CLOUD_LOGGING_ONLY
+
+# Images to push to Artifact Registry after a successful build.
+# This uses variables defined in the trigger to dynamically construct the image name.
+images:
+- '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO_NAME}/${_IMAGE_NAME}:${_IMAGE_TAG}'
+
+# Substitutions allow us to pass dynamic values from the trigger into the build steps.
+# These values will be configured in your Cloud Build Trigger settings.
+substitutions:
+  _AR_REGION: 'us-central1' # Replace with your chosen region (e.g., asia-south1)
+  _AR_REPO_NAME: 'streamlit-apps' # Your Artifact Registry repo name
+  _IMAGE_NAME: 'resume-prioritizer-app' # The name for your Docker image
+  _IMAGE_TAG: 'latest' # The tag for your Docker image
