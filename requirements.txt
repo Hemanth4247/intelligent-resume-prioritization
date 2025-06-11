@@ -5,6 +5,8 @@ scikit-learn
 spacy==3.7.4  # Specific version to ensure compatibility
 nltk
 transformers
+sentence-transformers # ESSENTIAL: For sentence embedding models (requires torch)
+torch               # ESSENTIAL: The core PyTorch library
 python-docx
 pdfminer.six
 # For GCP integration (if you enable GCS fetch or Vertex AI calls)
