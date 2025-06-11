@@ -1,34 +1,41 @@
 # Use a stable, lightweight Python base image.
-# This is the foundation: it includes Python 3.9 and basic Linux utilities.
 FROM python:3.9-slim-buster
 
 # Set the working directory inside the container.
-# All subsequent commands (COPY, RUN, CMD) will be executed relative to this directory.
-# So, '/app' inside the container will contain your project code.
 WORKDIR /app
 
-# Copy your project's 'requirements.txt' file into the container's '/app' directory.
-# We do this first so Docker can cache this step. If only code changes,
-# it won't reinstall dependencies unnecessarily.
+# Copy your project's requirements.txt into the container.
 COPY requirements.txt .
 
-# Install all Python dependencies listed in 'requirements.txt'.
-# '--no-cache-dir' helps keep the final Docker image size smaller.
+# --- START CRITICAL UPDATED INSTALLATION SECTION ---
+# Install PyTorch first, specifically the CPU-only version, from PyTorch's stable URL.
+# This is more robust than relying on pip's default resolution, especially for large packages.
+# Make sure these versions (2.0.0, 0.15.2, 2.0.2) are compatible if you used a different torch version locally.
+# If this specific version fails, check https://pytorch.org/get-started/locally/ for the latest CPU-only pip command for Linux.
+RUN pip install --no-cache-dir \
+    torch==2.0.0+cpu \
+    torchvision==0.15.2+cpu \
+    torchaudio==2.0.2+cpu \
+    -f https://download.pytorch.org/whl/torch_stable.html
+
+# Now, install the rest of your dependencies from requirements.txt.
+# This command should run smoothly as torch is already handled.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire contents of your local project directory (where this Dockerfile is)
-# into the container's '/app' directory.
-# The first '.' refers to your local current directory.
-# The second '.' refers to the WORKDIR '/app' inside the container.
+# Download NLTK data required by your TextCleaner or other NLTK uses.
+# 'punkt' is commonly used for tokenization, 'stopwords' for cleaning.
+RUN python -m nltk.downloader punkt stopwords
+
+# Download the default SpaCy model used by SpaCy-based components.
+# 'en_core_web_sm' is the small English model.
+RUN python -m spacy download en_core_web_sm
+# --- END CRITICAL UPDATED INSTALLATION SECTION ---
+
+# Copy the entire contents of your local project directory into the container.
 COPY . .
 
 # Declare that the container will listen for network traffic on port 8080.
-# Cloud Run expects applications to listen on port 8080 by default.
 EXPOSE 8080
 
-# This is the command that Docker will run when the container starts.
-# It starts your Streamlit application.
-# "streamlit run app.py": Tells Streamlit to execute your main app file.
-# "--server.port 8080": Forces Streamlit to listen on port 8080.
-# "--server.address 0.0.0.0": Makes the Streamlit app accessible from outside the container.
+# Command to run when the container starts (starts your Streamlit app).
 CMD ["streamlit", "run", "app.py", "--server.port", "8080", "--server.address", "0.0.0.0"]
