@@ -8,26 +8,22 @@ WORKDIR /app
 COPY requirements.txt .
 
 # --- START CRITICAL UPDATED INSTALLATION SECTION ---
-# Install PyTorch first, specifically the CPU-only version, from PyTorch's stable URL.
-# This is more robust than relying on pip's default resolution, especially for large packages.
-# Make sure these versions (2.0.0, 0.15.2, 2.0.2) are compatible if you used a different torch version locally.
-# If this specific version fails, check https://pytorch.org/get-started/locally/ for the latest CPU-only pip command for Linux.
+# Install PyTorch first, specifically the CPU-only version, using the official recommended method.
+# This command was directly obtained from pytorch.org for Stable, Linux, Pip, Python, CPU.
 RUN pip install --no-cache-dir \
-    torch==2.0.0+cpu \
-    torchvision==0.15.2+cpu \
-    torchaudio==2.0.2+cpu \
-    -f https://download.pytorch.org/whl/torch_stable.html
+    torch \
+    torchvision \
+    torchaudio \
+    --index-url https://download.pytorch.org/whl/cpu
 
 # Now, install the rest of your dependencies from requirements.txt.
 # This command should run smoothly as torch is already handled.
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Download NLTK data required by your TextCleaner or other NLTK uses.
-# 'punkt' is commonly used for tokenization, 'stopwords' for cleaning.
 RUN python -m nltk.downloader punkt stopwords
 
 # Download the default SpaCy model used by SpaCy-based components.
-# 'en_core_web_sm' is the small English model.
 RUN python -m spacy download en_core_web_sm
 # --- END CRITICAL UPDATED INSTALLATION SECTION ---
 
